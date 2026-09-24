@@ -1,4 +1,4 @@
-package com.booking.service;
+package com.booking.controller;
 
 import com.booking.model.Payment;
 import com.booking.util.DBConnection;
@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 
-public class PaymentServiceTest {
+public class PaymentControllerTest {
 
     public static void main(String[] args) {
 
@@ -17,20 +17,15 @@ public class PaymentServiceTest {
 
             if (bookingId == null) {
                 System.out.println(
-                        "No confirmed booking found."
-                );
-                System.out.println(
-                        "Create a booking first."
+                        "No confirmed booking found. Create a booking first."
                 );
                 return;
             }
 
-            System.out.println(
-                    "Using Booking ID: " + bookingId
-            );
+            System.out.println("Booking ID: " + bookingId);
 
-            PaymentService paymentService =
-                    new PaymentService();
+            PaymentController controller =
+                    new PaymentController();
 
             Payment payment = new Payment();
 
@@ -44,15 +39,17 @@ public class PaymentServiceTest {
             payment.setTransactionRef(transactionRef);
             payment.setPaidAt(LocalDateTime.now());
 
-            paymentService.createPayment(payment);
+            // Create payment
+            controller.createPayment(payment);
 
             System.out.println(
                     "Payment created successfully!"
             );
 
+            // Find the newly created payment
             Payment createdPayment = null;
 
-            for (Payment p : paymentService.getAllPayments()) {
+            for (Payment p : controller.getAllPayments()) {
 
                 if (transactionRef.equals(
                         p.getTransactionRef())) {
@@ -64,7 +61,7 @@ public class PaymentServiceTest {
 
             if (createdPayment == null) {
                 System.out.println(
-                        "Created payment was not found."
+                        "New payment was not found."
                 );
                 return;
             }
@@ -76,31 +73,34 @@ public class PaymentServiceTest {
             );
 
             System.out.println(
-                    "Booking ID: "
-                            + createdPayment.getBookingId()
-            );
-
-            System.out.println(
-                    "Amount: "
-                            + createdPayment.getAmount()
-            );
-
-            System.out.println(
-                    "Status: "
+                    "Payment Status: "
                             + createdPayment.getPaymentStatus()
             );
 
+            // Refund the exact payment
+            controller.refundPayment(
+                    createdPayment.getPaymentId()
+            );
+
             System.out.println(
-                    "Transaction Ref: "
-                            + createdPayment.getTransactionRef()
+                    "Payment refunded successfully!"
+            );
+
+            // Verify refund
+            Payment refundedPayment =
+                    controller.getPaymentById(
+                            createdPayment.getPaymentId()
+                    );
+
+            System.out.println(
+                    "Final Payment Status: "
+                            + refundedPayment.getPaymentStatus()
             );
 
         } catch (Exception e) {
 
-            System.out.println(
-                    "Payment validation failed: "
-                            + e.getMessage()
-            );
+            System.out.println("Error occurred!");
+            e.printStackTrace();
         }
     }
 
