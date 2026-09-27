@@ -1,5 +1,6 @@
 package com.booking.controller;
 
+import com.booking.exception.GlobalExceptionHandler;
 import com.booking.model.Payment;
 import com.booking.service.PaymentService;
 
@@ -14,52 +15,72 @@ public class PaymentController {
         this.paymentService = new PaymentService();
     }
 
-    // Create payment
-    public void createPayment(Payment payment)
-            throws SQLException {
-
-        paymentService.createPayment(payment);
+    public void createPayment(Payment payment) {
+        try {
+            paymentService.createPayment(payment);
+            System.out.println("Payment created successfully!");
+        } catch (Exception e) {
+            GlobalExceptionHandler.handle(e);
+        }
     }
 
-    // Get payment by ID
-    public Payment getPaymentById(Long paymentId)
-            throws SQLException {
+    public Payment getPaymentById(Long paymentId) {
 
-        return paymentService.getPaymentById(paymentId);
+        try {
+            return paymentService.getPaymentById(paymentId);
+        } catch (SQLException e) {
+            GlobalExceptionHandler.handle(e);
+            return null;
+        }
     }
 
-    // Get all payments
-    public List<Payment> getAllPayments()
-            throws SQLException {
+    public Payment getPaymentByBookingId(Long bookingId) {
 
-        return paymentService.getAllPayments();
+        try {
+            return paymentService.getPaymentByBookingId(bookingId);
+        } catch (SQLException e) {
+            GlobalExceptionHandler.handle(e);
+            return null;
+        }
     }
 
-    // Get payment by booking ID
-    public Payment getPaymentByBookingId(Long bookingId)
-            throws SQLException {
+    public List<Payment> getAllPayments() {
 
-        return paymentService.getPaymentByBookingId(bookingId);
+        try {
+            return paymentService.getAllPayments();
+        } catch (SQLException e) {
+            GlobalExceptionHandler.handle(e);
+            return null;
+        }
     }
 
-    // Update payment
-    public void updatePayment(Payment payment)
-            throws SQLException {
+    public void updatePayment(Payment payment) {
 
-        paymentService.updatePayment(payment);
+        try {
+            paymentService.updatePayment(payment);
+            System.out.println("Payment updated successfully!");
+        } catch (Exception e) {
+            GlobalExceptionHandler.handle(e);
+        }
     }
 
-    // Refund payment
-    public void refundPayment(Long paymentId)
-            throws SQLException {
+    public void refundPayment(Long paymentId) {
 
-        paymentService.refundPayment(paymentId);
+        try {
+            paymentService.refundPayment(paymentId);
+            System.out.println("Payment refunded successfully!");
+        } catch (Exception e) {
+            GlobalExceptionHandler.handle(e);
+        }
     }
 
-    // Delete payment
-    public void deletePayment(Long paymentId)
-            throws SQLException {
+    public void deletePayment(Long paymentId) {
 
-        paymentService.deletePayment(paymentId);
+        try {
+            paymentService.deletePayment(paymentId);
+            System.out.println("Payment deleted successfully!");
+        } catch (Exception e) {
+            GlobalExceptionHandler.handle(e);
+        }
     }
 }

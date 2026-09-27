@@ -1,20 +1,26 @@
 package com.booking.service;
 
 import com.booking.dao.BookingDAO;
+import com.booking.daoimpl.BookingDAOImpl;
 import com.booking.exception.ValidationException;
 import com.booking.model.Booking;
-import com.booking.util.LoggerUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class BookingService {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(BookingService.class);
+
     private final BookingDAO bookingDAO;
 
-    private static final Logger logger =
-            LoggerUtil.getLogger(BookingService.class);
+    public BookingService() {
+        this.bookingDAO = new BookingDAOImpl();
+    }
 
     public BookingService(BookingDAO bookingDAO) {
         this.bookingDAO = bookingDAO;
@@ -22,55 +28,46 @@ public class BookingService {
 
     public void createBooking(Booking booking) throws SQLException {
 
+        logger.info("Creating booking");
+
         if (booking == null) {
-            logger.warning("Booking creation failed: Booking is null");
+            logger.warn("Booking is null");
             throw new ValidationException("Booking cannot be null");
         }
 
         if (booking.getUserId() == null) {
-            logger.warning("Booking creation failed: User ID is missing");
             throw new ValidationException("User ID is required");
         }
 
         if (booking.getHotelId() == null) {
-            logger.warning("Booking creation failed: Hotel ID is missing");
             throw new ValidationException("Hotel ID is required");
         }
 
         if (booking.getRoomId() == null) {
-            logger.warning("Booking creation failed: Room ID is missing");
             throw new ValidationException("Room ID is required");
         }
 
-        if (booking.getCheckInDate() == null) {
-            logger.warning("Booking creation failed: Check-in date is missing");
-            throw new ValidationException("Check-in date is required");
+        if (booking.getCheckInDate() == null ||
+                booking.getCheckOutDate() == null) {
+            throw new ValidationException("Booking dates are required");
         }
 
-        if (booking.getCheckOutDate() == null) {
-            logger.warning("Booking creation failed: Check-out date is missing");
-            throw new ValidationException("Check-out date is required");
-        }
-
-        if (!booking.getCheckOutDate().isAfter(booking.getCheckInDate())) {
-            logger.warning("Booking creation failed: Invalid check-in/check-out dates");
+        if (!booking.getCheckOutDate()
+                .isAfter(booking.getCheckInDate())) {
             throw new ValidationException(
                     "Check-out date must be after check-in date"
             );
         }
 
-        if (booking.getGuests() == null || booking.getGuests() <= 0) {
-            logger.warning("Booking creation failed: Invalid number of guests");
+        if (booking.getGuests() == null ||
+                booking.getGuests() <= 0) {
             throw new ValidationException(
-                    "Number of guests must be greater than 0"
+                    "Guests must be greater than 0"
             );
         }
 
         if (booking.getTotalAmount() == null ||
                 booking.getTotalAmount() < 0) {
-
-            logger.warning("Booking creation failed: Invalid total amount");
-
             throw new ValidationException(
                     "Total amount cannot be negative"
             );
@@ -78,9 +75,6 @@ public class BookingService {
 
         if (booking.getBookingStatus() == null ||
                 booking.getBookingStatus().trim().isEmpty()) {
-
-            logger.warning("Booking creation failed: Booking status is missing");
-
             throw new ValidationException(
                     "Booking status is required"
             );
@@ -93,53 +87,29 @@ public class BookingService {
         );
 
         if (!available) {
-
-            logger.warning(
-                    "Booking creation failed: Room "
-                            + booking.getRoomId()
-                            + " is not available"
-            );
-
+            logger.warn("Room is not available");
             throw new ValidationException(
-                    "Room is not available for the selected dates"
+                    "Room is not available for selected dates"
             );
         }
 
         bookingDAO.save(booking);
 
-        logger.info(
-                "Booking created successfully for user ID: "
-                        + booking.getUserId()
-        );
+        logger.info("Booking created successfully");
     }
 
-    public Booking getBookingById(Long bookingId) throws SQLException {
+    public Booking getBookingById(Long bookingId)
+            throws SQLException {
 
-        if (bookingId == null) {
-            logger.warning("Get booking failed: Booking ID is missing");
-            throw new ValidationException("Booking ID is required");
-        }
+        logger.info("Getting booking by ID");
 
-        Booking booking = bookingDAO.findById(bookingId);
-
-        if (booking != null) {
-            logger.info(
-                    "Booking retrieved successfully. Booking ID: "
-                            + bookingId
-            );
-        } else {
-            logger.warning(
-                    "Booking not found. Booking ID: "
-                            + bookingId
-            );
-        }
-
-        return booking;
+        return bookingDAO.findById(bookingId);
     }
 
-    public List<Booking> getAllBookings() throws SQLException {
+    public List<Booking> getAllBookings()
+            throws SQLException {
 
-        logger.info("Fetching all bookings");
+        logger.info("Getting all bookings");
 
         return bookingDAO.findAll();
     }
@@ -147,20 +117,7 @@ public class BookingService {
     public List<Booking> getBookingsByUserId(Long userId)
             throws SQLException {
 
-        if (userId == null) {
-            logger.warning(
-                    "Get user bookings failed: User ID is missing"
-            );
-
-            throw new ValidationException(
-                    "User ID is required"
-            );
-        }
-
-        logger.info(
-                "Fetching bookings for user ID: "
-                        + userId
-        );
+        logger.info("Getting bookings by user");
 
         return bookingDAO.findByUserId(userId);
     }
@@ -168,179 +125,53 @@ public class BookingService {
     public List<Booking> getBookingsByHotelId(Long hotelId)
             throws SQLException {
 
-        if (hotelId == null) {
-            logger.warning(
-                    "Get hotel bookings failed: Hotel ID is missing"
-            );
-
-            throw new ValidationException(
-                    "Hotel ID is required"
-            );
-        }
-
-        logger.info(
-                "Fetching bookings for hotel ID: "
-                        + hotelId
-        );
+        logger.info("Getting bookings by hotel");
 
         return bookingDAO.findByHotelId(hotelId);
     }
 
-    public void updateBooking(Booking booking) throws SQLException {
+    public boolean isRoomAvailable(
+            Long roomId,
+            LocalDate checkInDate,
+            LocalDate checkOutDate)
+            throws SQLException {
 
-        if (booking == null) {
-            logger.warning(
-                    "Booking update failed: Booking is null"
-            );
+        logger.info("Checking room availability");
 
-            throw new ValidationException(
-                    "Booking cannot be null"
-            );
-        }
-
-        if (booking.getBookingId() == null) {
-            logger.warning(
-                    "Booking update failed: Booking ID is missing"
-            );
-
-            throw new ValidationException(
-                    "Booking ID is required"
-            );
-        }
-
-        if (booking.getUserId() == null) {
-            throw new ValidationException(
-                    "User ID is required"
-            );
-        }
-
-        if (booking.getHotelId() == null) {
-            throw new ValidationException(
-                    "Hotel ID is required"
-            );
-        }
-
-        if (booking.getRoomId() == null) {
-            throw new ValidationException(
-                    "Room ID is required"
-            );
-        }
-
-        if (booking.getCheckInDate() == null) {
-            throw new ValidationException(
-                    "Check-in date is required"
-            );
-        }
-
-        if (booking.getCheckOutDate() == null) {
-            throw new ValidationException(
-                    "Check-out date is required"
-            );
-        }
-
-        if (!booking.getCheckOutDate()
-                .isAfter(booking.getCheckInDate())) {
-
-            throw new ValidationException(
-                    "Check-out date must be after check-in date"
-            );
-        }
-
-        if (booking.getGuests() == null ||
-                booking.getGuests() <= 0) {
-
-            throw new ValidationException(
-                    "Number of guests must be greater than 0"
-            );
-        }
-
-        if (booking.getTotalAmount() == null ||
-                booking.getTotalAmount() < 0) {
-
-            throw new ValidationException(
-                    "Total amount cannot be negative"
-            );
-        }
-
-        if (booking.getBookingStatus() == null ||
-                booking.getBookingStatus().trim().isEmpty()) {
-
-            throw new ValidationException(
-                    "Booking status is required"
-            );
-        }
-
-        bookingDAO.update(booking);
-
-        logger.info(
-                "Booking updated successfully. Booking ID: "
-                        + booking.getBookingId()
+        return bookingDAO.isRoomAvailable(
+                roomId,
+                checkInDate,
+                checkOutDate
         );
     }
 
-    public void deleteBooking(Long bookingId) throws SQLException {
+    public void cancelBooking(Long bookingId)
+            throws SQLException {
 
-        if (bookingId == null) {
-            logger.warning(
-                    "Booking deletion failed: Booking ID is missing"
-            );
-
-            throw new ValidationException(
-                    "Booking ID is required"
-            );
-        }
-
-        bookingDAO.delete(bookingId);
-
-        logger.info(
-                "Booking deleted successfully. Booking ID: "
-                        + bookingId
-        );
-    }
-
-    public void cancelBooking(Long bookingId) throws SQLException {
-
-        if (bookingId == null) {
-            logger.warning(
-                    "Booking cancellation failed: Booking ID is missing"
-            );
-
-            throw new ValidationException(
-                    "Booking ID is required"
-            );
-        }
-
-        Booking booking = bookingDAO.findById(bookingId);
-
-        if (booking == null) {
-            logger.warning(
-                    "Booking cancellation failed: Booking not found. ID: "
-                            + bookingId
-            );
-
-            throw new ValidationException(
-                    "Booking not found"
-            );
-        }
-
-        if ("CANCELLED".equalsIgnoreCase(
-                booking.getBookingStatus())) {
-
-            logger.warning(
-                    "Booking is already cancelled. Booking ID: "
-                            + bookingId
-            );
-
-            throw new ValidationException(
-                    "Booking is already cancelled"
-            );
-        }
+        logger.info("Cancelling booking");
 
         bookingDAO.cancelBooking(bookingId);
 
-        logger.info(
-                "Booking cancelled successfully. Booking ID: "
-                        + bookingId
-        );
+        logger.info("Booking cancelled successfully");
+    }
+
+    public void updateBooking(Booking booking)
+            throws SQLException {
+
+        logger.info("Updating booking");
+
+        bookingDAO.update(booking);
+
+        logger.info("Booking updated successfully");
+    }
+
+    public void deleteBooking(Long bookingId)
+            throws SQLException {
+
+        logger.info("Deleting booking");
+
+        bookingDAO.delete(bookingId);
+
+        logger.info("Booking deleted successfully");
     }
 }

@@ -1,44 +1,50 @@
-package com.booking.service;
+package com.booking.controller;
 
-import com.booking.daoimpl.BookingDAOImpl;
 import com.booking.exception.ValidationException;
 import com.booking.model.Booking;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
 
-public class BookingServiceTest {
+public class BookingControllerTest {
 
     public static void main(String[] args) {
 
         try {
-            // Create BookingService with BookingDAO implementation
-            BookingService bookingService =
-                    new BookingService(new BookingDAOImpl());
 
-            // Create booking object
+            // Create Booking Controller
+            BookingController bookingController =
+                    new BookingController();
+
+            // Create Booking object
             Booking booking = new Booking();
 
+            // Existing User, Hotel and Room IDs
             booking.setUserId(1L);
             booking.setHotelId(1L);
             booking.setRoomId(2L);
 
+            // Future booking dates
+            // Using a far-future date to avoid existing bookings
             booking.setCheckInDate(
-                    LocalDate.of(2026, 10, 1)
+                    LocalDate.of(2030, 1, 10)
             );
 
             booking.setCheckOutDate(
-                    LocalDate.of(2026, 10, 5)
+                    LocalDate.of(2030, 1, 15)
             );
 
+            // Number of guests
             booking.setGuests(2);
 
+            // Total booking amount
             booking.setTotalAmount(5000.0);
 
+            // Booking status
             booking.setBookingStatus("CONFIRMED");
 
-            // Create booking
-            bookingService.createBooking(booking);
+            // Create booking through Controller
+            bookingController.createBooking(booking);
 
             System.out.println(
                     "Booking created successfully!"

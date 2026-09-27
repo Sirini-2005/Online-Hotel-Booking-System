@@ -3,6 +3,7 @@ package com.booking.dao;
 import com.booking.model.Booking;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface BookingDAO {
@@ -17,15 +18,15 @@ public interface BookingDAO {
 
     List<Booking> findByHotelId(Long hotelId) throws SQLException;
 
-    void update(Booking booking) throws SQLException;
-
-    void delete(Long bookingId) throws SQLException;
-
     boolean isRoomAvailable(
             Long roomId,
-            java.time.LocalDate checkInDate,
-            java.time.LocalDate checkOutDate
+            LocalDate checkInDate,
+            LocalDate checkOutDate
     ) throws SQLException;
 
     void cancelBooking(Long bookingId) throws SQLException;
+
+    void update(Booking booking) throws SQLException;
+
+    void delete(Long bookingId) throws SQLException;
 }

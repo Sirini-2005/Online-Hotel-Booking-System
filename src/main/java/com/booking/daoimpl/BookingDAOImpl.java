@@ -3,92 +3,85 @@ package com.booking.daoimpl;
 import com.booking.dao.BookingDAO;
 import com.booking.model.Booking;
 import com.booking.util.DBConnection;
-import com.booking.util.LoggerUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class BookingDAOImpl implements BookingDAO {
 
     private static final Logger logger =
-            LoggerUtil.getLogger(BookingDAOImpl.class);
+            LoggerFactory.getLogger(BookingDAOImpl.class);
 
     @Override
     public void save(Booking booking) throws SQLException {
 
-        String sql = """
-                INSERT INTO booking
-                (user_id, hotel_id, room_id, check_in_date, check_out_date,
-                 guests, total_amount, booking_status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+        String sql = "INSERT INTO booking " +
+                "(user_id, hotel_id, room_id, check_in_date, check_out_date, " +
+                "guests, total_amount, booking_status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        logger.info("Creating booking for room ID: {}", booking.getRoomId());
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, booking.getUserId());
             statement.setLong(2, booking.getHotelId());
             statement.setLong(3, booking.getRoomId());
-            statement.setDate(
-                    4,
-                    Date.valueOf(booking.getCheckInDate())
-            );
-            statement.setDate(
-                    5,
-                    Date.valueOf(booking.getCheckOutDate())
-            );
+            statement.setDate(4,
+                    java.sql.Date.valueOf(booking.getCheckInDate()));
+            statement.setDate(5,
+                    java.sql.Date.valueOf(booking.getCheckOutDate()));
             statement.setInt(6, booking.getGuests());
             statement.setDouble(7, booking.getTotalAmount());
             statement.setString(8, booking.getBookingStatus());
 
             statement.executeUpdate();
 
-            logger.info(
-                    "Booking saved successfully. Booking user ID: "
-                            + booking.getUserId()
-            );
+            logger.info("Booking created successfully");
+        } catch (SQLException e) {
+            logger.error("Error while creating booking", e);
+            throw e;
         }
     }
 
     @Override
     public Booking findById(Long bookingId) throws SQLException {
 
-        String sql =
-                "SELECT * FROM booking WHERE booking_id = ?";
+        String sql = "SELECT * FROM booking WHERE booking_id = ?";
+
+        logger.info("Finding booking with ID: {}", bookingId);
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, bookingId);
 
-            try (ResultSet resultSet =
-                         statement.executeQuery()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
 
                 if (resultSet.next()) {
-
-                    logger.info(
-                            "Booking found. Booking ID: "
-                                    + bookingId
-                    );
-
-                    return mapResultSetToBooking(resultSet);
+                    logger.info("Booking found with ID: {}", bookingId);
+                    return mapBooking(resultSet);
                 }
             }
+
+        } catch (SQLException e) {
+            logger.error(
+                    "Error while finding booking with ID: {}",
+                    bookingId,
+                    e
+            );
+            throw e;
         }
 
-        logger.warning(
-                "Booking not found. Booking ID: "
-                        + bookingId
-        );
-
+        logger.warn("Booking not found with ID: {}", bookingId);
         return null;
     }
 
@@ -97,127 +90,232 @@ public class BookingDAOImpl implements BookingDAO {
 
         String sql = "SELECT * FROM booking";
 
+        logger.info("Fetching all bookings");
+
         List<Booking> bookings = new ArrayList<>();
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql);
-             ResultSet resultSet =
-                     statement.executeQuery()) {
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
 
             while (resultSet.next()) {
-                bookings.add(
-                        mapResultSetToBooking(resultSet)
-                );
+                bookings.add(mapBooking(resultSet));
             }
-        }
 
-        logger.info(
-                "All bookings retrieved. Count: "
-                        + bookings.size()
-        );
+            logger.info("Fetched {} bookings", bookings.size());
+
+        } catch (SQLException e) {
+            logger.error("Error while fetching all bookings", e);
+            throw e;
+        }
 
         return bookings;
     }
 
     @Override
-    public List<Booking> findByUserId(Long userId)
-            throws SQLException {
+    public List<Booking> findByUserId(Long userId) throws SQLException {
 
-        String sql =
-                "SELECT * FROM booking WHERE user_id = ?";
+        String sql = "SELECT * FROM booking WHERE user_id = ?";
+
+        logger.info("Finding bookings for user ID: {}", userId);
 
         List<Booking> bookings = new ArrayList<>();
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, userId);
 
-            try (ResultSet resultSet =
-                         statement.executeQuery()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
 
                 while (resultSet.next()) {
-                    bookings.add(
-                            mapResultSetToBooking(resultSet)
-                    );
+                    bookings.add(mapBooking(resultSet));
                 }
             }
-        }
 
-        logger.info(
-                "Bookings retrieved for User ID: "
-                        + userId
-        );
+            logger.info(
+                    "Found {} bookings for user ID: {}",
+                    bookings.size(),
+                    userId
+            );
+
+        } catch (SQLException e) {
+            logger.error(
+                    "Error while finding bookings for user ID: {}",
+                    userId,
+                    e
+            );
+            throw e;
+        }
 
         return bookings;
     }
 
     @Override
-    public List<Booking> findByHotelId(Long hotelId)
-            throws SQLException {
+    public List<Booking> findByHotelId(Long hotelId) throws SQLException {
 
-        String sql =
-                "SELECT * FROM booking WHERE hotel_id = ?";
+        String sql = "SELECT * FROM booking WHERE hotel_id = ?";
+
+        logger.info("Finding bookings for hotel ID: {}", hotelId);
 
         List<Booking> bookings = new ArrayList<>();
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, hotelId);
 
-            try (ResultSet resultSet =
-                         statement.executeQuery()) {
+            try (ResultSet resultSet = statement.executeQuery()) {
 
                 while (resultSet.next()) {
-                    bookings.add(
-                            mapResultSetToBooking(resultSet)
-                    );
+                    bookings.add(mapBooking(resultSet));
                 }
             }
+
+            logger.info(
+                    "Found {} bookings for hotel ID: {}",
+                    bookings.size(),
+                    hotelId
+            );
+
+        } catch (SQLException e) {
+            logger.error(
+                    "Error while finding bookings for hotel ID: {}",
+                    hotelId,
+                    e
+            );
+            throw e;
         }
 
+        return bookings;
+    }
+
+    @Override
+    public boolean isRoomAvailable(
+            Long roomId,
+            LocalDate checkInDate,
+            LocalDate checkOutDate) throws SQLException {
+
+        String sql = "SELECT COUNT(*) FROM booking " +
+                "WHERE room_id = ? " +
+                "AND booking_status NOT IN ('CANCELLED', 'REJECTED') " +
+                "AND check_in_date < ? " +
+                "AND check_out_date > ?";
+
         logger.info(
-                "Bookings retrieved for Hotel ID: "
-                        + hotelId
+                "Checking room availability. Room ID: {}, Check-in: {}, Check-out: {}",
+                roomId,
+                checkInDate,
+                checkOutDate
         );
 
-        return bookings;
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, roomId);
+            statement.setDate(
+                    2,
+                    java.sql.Date.valueOf(checkOutDate)
+            );
+            statement.setDate(
+                    3,
+                    java.sql.Date.valueOf(checkInDate)
+            );
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+
+                if (resultSet.next()) {
+
+                    int bookingCount = resultSet.getInt(1);
+
+                    boolean available = bookingCount == 0;
+
+                    logger.info(
+                            "Room ID: {} availability: {}",
+                            roomId,
+                            available
+                    );
+
+                    return available;
+                }
+            }
+
+        } catch (SQLException e) {
+            logger.error(
+                    "Error while checking room availability for room ID: {}",
+                    roomId,
+                    e
+            );
+            throw e;
+        }
+
+        return false;
+    }
+
+    @Override
+    public void cancelBooking(Long bookingId) throws SQLException {
+
+        String sql = "UPDATE booking " +
+                "SET booking_status = ? " +
+                "WHERE booking_id = ?";
+
+        logger.info("Cancelling booking with ID: {}", bookingId);
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, "CANCELLED");
+            statement.setLong(2, bookingId);
+
+            statement.executeUpdate();
+
+            logger.info(
+                    "Booking cancelled successfully with ID: {}",
+                    bookingId
+            );
+
+        } catch (SQLException e) {
+            logger.error(
+                    "Error while cancelling booking with ID: {}",
+                    bookingId,
+                    e
+            );
+            throw e;
+        }
     }
 
     @Override
     public void update(Booking booking) throws SQLException {
 
-        String sql = """
-                UPDATE booking
-                SET user_id = ?,
-                    hotel_id = ?,
-                    room_id = ?,
-                    check_in_date = ?,
-                    check_out_date = ?,
-                    guests = ?,
-                    total_amount = ?,
-                    booking_status = ?
-                WHERE booking_id = ?
-                """;
+        String sql = "UPDATE booking SET " +
+                "user_id = ?, " +
+                "hotel_id = ?, " +
+                "room_id = ?, " +
+                "check_in_date = ?, " +
+                "check_out_date = ?, " +
+                "guests = ?, " +
+                "total_amount = ?, " +
+                "booking_status = ? " +
+                "WHERE booking_id = ?";
+
+        logger.info(
+                "Updating booking with ID: {}",
+                booking.getBookingId()
+        );
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, booking.getUserId());
             statement.setLong(2, booking.getHotelId());
             statement.setLong(3, booking.getRoomId());
             statement.setDate(
                     4,
-                    Date.valueOf(booking.getCheckInDate())
+                    java.sql.Date.valueOf(booking.getCheckInDate())
             );
             statement.setDate(
                     5,
-                    Date.valueOf(booking.getCheckOutDate())
+                    java.sql.Date.valueOf(booking.getCheckOutDate())
             );
             statement.setInt(6, booking.getGuests());
             statement.setDouble(7, booking.getTotalAmount());
@@ -227,113 +325,50 @@ public class BookingDAOImpl implements BookingDAO {
             statement.executeUpdate();
 
             logger.info(
-                    "Booking updated successfully. Booking ID: "
-                            + booking.getBookingId()
+                    "Booking updated successfully with ID: {}",
+                    booking.getBookingId()
             );
+
+        } catch (SQLException e) {
+            logger.error(
+                    "Error while updating booking with ID: {}",
+                    booking.getBookingId(),
+                    e
+            );
+            throw e;
         }
     }
 
     @Override
     public void delete(Long bookingId) throws SQLException {
 
-        String sql =
-                "DELETE FROM booking WHERE booking_id = ?";
+        String sql = "DELETE FROM booking WHERE booking_id = ?";
+
+        logger.info("Deleting booking with ID: {}", bookingId);
 
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, bookingId);
 
             statement.executeUpdate();
 
             logger.info(
-                    "Booking deleted successfully. Booking ID: "
-                            + bookingId
+                    "Booking deleted successfully with ID: {}",
+                    bookingId
             );
+
+        } catch (SQLException e) {
+            logger.error(
+                    "Error while deleting booking with ID: {}",
+                    bookingId,
+                    e
+            );
+            throw e;
         }
     }
 
-    @Override
-    public boolean isRoomAvailable(
-            Long roomId,
-            java.time.LocalDate checkInDate,
-            java.time.LocalDate checkOutDate
-    ) throws SQLException {
-
-        String sql = """
-                SELECT COUNT(*)
-                FROM booking
-                WHERE room_id = ?
-                  AND booking_status <> 'CANCELLED'
-                  AND check_in_date < ?
-                  AND check_out_date > ?
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
-
-            statement.setLong(1, roomId);
-            statement.setDate(
-                    2,
-                    Date.valueOf(checkOutDate)
-            );
-            statement.setDate(
-                    3,
-                    Date.valueOf(checkInDate)
-            );
-
-            try (ResultSet resultSet =
-                         statement.executeQuery()) {
-
-                if (resultSet.next()) {
-
-                    boolean available =
-                            resultSet.getInt(1) == 0;
-
-                    logger.info(
-                            "Room availability checked. Room ID: "
-                                    + roomId
-                                    + ", Available: "
-                                    + available
-                    );
-
-                    return available;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public void cancelBooking(Long bookingId)
-            throws SQLException {
-
-        String sql = """
-                UPDATE booking
-                SET booking_status = 'CANCELLED'
-                WHERE booking_id = ?
-                """;
-
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
-
-            statement.setLong(1, bookingId);
-
-            statement.executeUpdate();
-
-            logger.info(
-                    "Booking cancelled successfully. Booking ID: "
-                            + bookingId
-            );
-        }
-    }
-
-    private Booking mapResultSetToBooking(
-            ResultSet resultSet) throws SQLException {
+    private Booking mapBooking(ResultSet resultSet) throws SQLException {
 
         Booking booking = new Booking();
 
@@ -354,13 +389,11 @@ public class BookingDAOImpl implements BookingDAO {
         );
 
         booking.setCheckInDate(
-                resultSet.getDate("check_in_date")
-                        .toLocalDate()
+                resultSet.getDate("check_in_date").toLocalDate()
         );
 
         booking.setCheckOutDate(
-                resultSet.getDate("check_out_date")
-                        .toLocalDate()
+                resultSet.getDate("check_out_date").toLocalDate()
         );
 
         booking.setGuests(
