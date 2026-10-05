@@ -1,75 +1,87 @@
 package com.booking.controller;
 
-import com.booking.daoimpl.BookingDAOImpl;
 import com.booking.model.Booking;
+import com.booking.model.BookingDetails;
 import com.booking.service.BookingService;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public class BookingController {
 
     private final BookingService bookingService;
 
-    public BookingController() {
-        this.bookingService = new BookingService(
-                new BookingDAOImpl()
+    public BookingController(
+            BookingService bookingService) {
+
+        this.bookingService =
+                bookingService;
+    }
+
+    public void createBooking(
+            Booking booking) {
+
+        bookingService.createBooking(
+                booking
         );
     }
 
-    // Create booking
-    public void createBooking(Booking booking)
-            throws SQLException {
+    public Booking getBookingById(
+            Long bookingId) {
 
-        bookingService.createBooking(booking);
+        return bookingService.getBookingById(
+                bookingId
+        );
     }
 
-    // Get booking by ID
-    public Booking getBookingById(Long bookingId)
-            throws SQLException {
-
-        return bookingService.getBookingById(bookingId);
-    }
-
-    // Get all bookings
-    public List<Booking> getAllBookings()
-            throws SQLException {
+    public List<Booking> getAllBookings() {
 
         return bookingService.getAllBookings();
     }
 
-    // Get bookings by user
-    public List<Booking> getBookingsByUserId(Long userId)
-            throws SQLException {
+    public List<Booking> getBookingsByUserId(
+            Long userId) {
 
-        return bookingService.getBookingsByUserId(userId);
+        return bookingService.getBookingsByUserId(
+                userId
+        );
     }
 
-    // Get bookings by hotel
-    public List<Booking> getBookingsByHotelId(Long hotelId)
-            throws SQLException {
+    public List<Booking> getBookingsByHotelId(
+            Long hotelId) {
 
-        return bookingService.getBookingsByHotelId(hotelId);
+        return bookingService.getBookingsByHotelId(
+                hotelId
+        );
     }
 
-    // Update booking
-    public void updateBooking(Booking booking)
-            throws SQLException {
+    public void updateBooking(
+            Booking booking) {
 
-        bookingService.updateBooking(booking);
+        bookingService.updateBooking(
+                booking
+        );
     }
 
-    // Delete booking
-    public void deleteBooking(Long bookingId)
-            throws SQLException {
+    public void cancelBooking(
+            Long bookingId) {
 
-        bookingService.deleteBooking(bookingId);
+        bookingService.cancelBooking(
+                bookingId
+        );
     }
 
-    // Cancel booking
-    public void cancelBooking(Long bookingId)
-            throws SQLException {
+    public void deleteBooking(
+            Long bookingId) {
 
-        bookingService.cancelBooking(bookingId);
+        bookingService.deleteBooking(
+                bookingId
+        );
+    }
+
+    public List<BookingDetails>
+    getAllBookingDetails() {
+
+        return bookingService
+                .getAllBookingDetails();
     }
 }

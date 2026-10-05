@@ -1,6 +1,7 @@
 package com.booking.dao;
 
 import com.booking.model.Booking;
+import com.booking.model.BookingDetails;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -20,13 +21,15 @@ public interface BookingDAO {
 
     boolean isRoomAvailable(
             Long roomId,
-            LocalDate checkInDate,
-            LocalDate checkOutDate
+            LocalDate checkIn,
+            LocalDate checkOut
     ) throws SQLException;
-
-    void cancelBooking(Long bookingId) throws SQLException;
 
     void update(Booking booking) throws SQLException;
 
+    void cancelBooking(Long bookingId) throws SQLException;
+
     void delete(Long bookingId) throws SQLException;
+
+    List<BookingDetails> findAllBookingDetails() throws SQLException;
 }

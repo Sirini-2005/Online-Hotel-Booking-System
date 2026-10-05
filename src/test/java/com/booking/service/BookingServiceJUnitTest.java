@@ -4,6 +4,8 @@ import com.booking.dao.BookingDAO;
 import com.booking.exception.ValidationException;
 import com.booking.model.Booking;
 import org.junit.jupiter.api.Test;
+import com.booking.service.BookingService;
+import com.booking.service.BookingServiceImpl;
 
 import java.time.LocalDate;
 
@@ -23,7 +25,7 @@ class BookingServiceJUnitTest {
                 LocalDate.of(2026, 10, 15)
         )).thenReturn(true);
 
-        BookingService bookingService = new BookingService(bookingDAO);
+        BookingService bookingService = new BookingServiceImpl(bookingDAO);
 
         Booking booking = new Booking();
         booking.setUserId(1L);
@@ -51,7 +53,7 @@ class BookingServiceJUnitTest {
                 LocalDate.of(2026, 10, 15)
         )).thenReturn(false);
 
-        BookingService bookingService = new BookingService(bookingDAO);
+        BookingService bookingService = new BookingServiceImpl(bookingDAO);
 
         Booking booking = new Booking();
         booking.setUserId(1L);
